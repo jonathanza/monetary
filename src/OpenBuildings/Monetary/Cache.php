@@ -2,57 +2,72 @@
 
 namespace OpenBuildings\Monetary;
 
-use Desarrolla2\Cache as DCache;
-use Desarrolla2\Cache\Adapter as DCache_Adapter;
-
 /**
- * Simple cache using Desarrolla2\Cache.
- * @author Haralan Dobrev <hdobrev@despark.com>
- * @copyright (c) 2013 OpenBuildings Inc.
- * @license http://spdx.org/licenses/BSD-3-Clause
- */
+* Simple cache using Desarrolla2\Cache.
+* @author Haralan Dobrev <hdobrev@despark.com>
+* @copyright (c) 2013 OpenBuildings Inc.
+* @license http://spdx.org/licenses/BSD-3-Clause
+*/
 class Cache implements Cacheable {
 
 	/**
-	 * Cache will be valid for 1 day
-	 */
+	* Cache will be valid for 1 day
+	*/
 	const CACHE_LIFETIME = 86400;
 
-	const CACHE_DIR = 'cache';
+	const CACHE_DIR = 'monetary';
 
 	/**
-	 * @var Desarrolla2\Cache\Cache
-	 */
+	* @var \Stash\Pool
+	*/
 	protected $_cache;
 
 	/**
-	 * Get an instance of the cache helper
-	 * @return Desarrolla2\Cache\Cache
-	 */
+	* Get an instance of the cache helper
+	* @return \Stash\Pool
+	*/
 	public function cache_driver()
 	{
-		if ( ! $this->_cache)
-		{
-			$adapter = new DCache_Adapter\File(
-				sys_get_temp_dir() . DIRECTORY_SEPARATOR  . static::CACHE_DIR
-			);
-			$adapter->setOption('ttl', static::CACHE_LIFETIME);
-			$this->_cache = new DCache\Cache($adapter);
+			if ( ! $this->_cache)
+			{
+				if (defined ( APP_CACHE )) {
+					$cache_dir = APP_CACHE . DIRECTORY_SEPARATOR . static::CACHE_DIR;
+				}
+				else {
+					$cache_dir = sys_get_temp_dir() . DIRECTORY_SEPARATOR . static::CACHE_DIR;
+				}
+
+				// Uses a install specific default path if none is passed.
+				$this->driver = new \Stash\Driver\FileSystem();
+
+				$this->driver->setOptions([
+					'path'	=> $cache_dir
+				]);
+
+				$this->_cache = new \Stash\Pool($this->driver);
+			}
+
+			return $this->_cache;
 		}
 
-		return $this->_cache;
+		private function getItem($cache_key)
+		{
+			return $this->cache_driver()->getItem($cache_key);
+		}
+
+		public function read_cache($cache_key)
+		{
+			$item = $this->getItem($cache_key);
+
+			return $item->get(\Stash\Invalidation::OLD);
+		}
+
+		public function write_cache($cache_key, $data)
+		{
+			$item = $this->getItem($cache_key);
+
+			$item->set($data, CACHE_LIFETIME);
+
+			return $this;
+		}
 	}
-
-	public function read_cache($cache_key)
-	{
-		return $this->cache_driver()->get($cache_key);
-	}
-
-	public function write_cache($cache_key, $data)
-	{
-		$this->cache_driver()->set($cache_key, $data);
-
-		return $this;
-	}
-
-}
