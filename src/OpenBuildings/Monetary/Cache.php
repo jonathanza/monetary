@@ -33,7 +33,7 @@ class Cache implements Cacheable {
 	{
 		if ( ! $this->_cache)
 		{
-			if (defined ( APP_CACHE )) {
+			if (defined ('APP_CACHE')) {
 				$cache_dir = APP_CACHE . DIRECTORY_SEPARATOR . static::CACHE_DIR;
 			}
 			else {
