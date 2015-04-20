@@ -33,8 +33,15 @@ class Cache implements Cacheable {
 	{
 		if ( ! $this->_cache)
 		{
+			if (defined ( APP_CACHE )) {
+				$cache_dir = APP_CACHE . DIRECTORY_SEPARATOR . static::CACHE_DIR;
+			}
+			else {
+				$cache_dir = sys_get_temp_dir() . DIRECTORY_SEPARATOR . static::CACHE_DIR;
+			}
+
 			$adapter = new DCache_Adapter\File(
-				sys_get_temp_dir() . DIRECTORY_SEPARATOR  . static::CACHE_DIR
+				$cache_dir
 			);
 			$adapter->setOption('ttl', static::CACHE_LIFETIME);
 			$this->_cache = new DCache\Cache($adapter);
